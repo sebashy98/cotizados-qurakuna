@@ -20,4 +20,4 @@ RUN mkdir -p /tmp/cotizaciones
 
 EXPOSE 8765
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8765", "--timeout", "120", "app:app"]
+CMD gunicorn --bind 0.0.0.0:$PORT --timeout 120 app:app
