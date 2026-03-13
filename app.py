@@ -14,7 +14,6 @@ def generar():
         if not datos or not datos.get('nombre'):
             return 'Falta el nombre del cliente', 400
 
-        # Llamar al script generador
         result = subprocess.run(
             [sys.executable, '/app/generar_cotizacion.py', json.dumps(datos)],
             capture_output=True, text=True, timeout=90
@@ -35,5 +34,4 @@ def generar():
         return str(e), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8765))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=8080)
