@@ -1,6 +1,5 @@
 FROM python:3.11-slim
 
-# Instalar LibreOffice (para convertir Word a PDF)
 RUN apt-get update && apt-get install -y \
     libreoffice \
     libreoffice-writer \
@@ -15,9 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Directorio temporal para PDFs generados
 RUN mkdir -p /tmp/cotizaciones
 
-EXPOSE 8765
+EXPOSE 8080
+
+ENV PORT=8080
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "120", "app:app"]
