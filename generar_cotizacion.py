@@ -69,6 +69,10 @@ def generar(datos):
     d_tras   = traslado.get('descripcion', 'Recojo de Plantas & Traslado de Plantas, Personal, Macetas. Ida y Vuelta.')
     pack     = datos.get('pack_cuidado', False)
     base     = datos.get('base_movil', False)
+    mano     = datos.get('mano_obra', {})
+    inc_mano = mano.get('incluye', False)
+    p_mano   = float(mano.get('precio', 0))
+    d_mano   = mano.get('descripcion', 'Servicio de instalación por jardinero.')
 
     # ── 1. Nombre en párrafos ──
     for p in doc.paragraphs:
@@ -99,6 +103,7 @@ def generar(datos):
     # ── 3. Total ──
     total = sum(float(p.get('precio',0)) * int(p.get('cantidad',1)) for p in productos)
     if inc_tras: total += p_tras
+    if inc_mano: total += p_mano
     if pack:     total += 60
     if base:     total += 60
 
@@ -120,8 +125,26 @@ def generar(datos):
                 target_p.runs[0].text = txt
                 for r in target_p.runs[1:]: r.text = ''
             else: target_p.add_run(txt)
+    # Mano de obra (fila 2 de tabla traslado)
+    if inc_mano and p_mano > 0:
+        fila_m = t1.rows[2]
+        p_dm = fila_m.cells[1].paragraphs[0]
+        for r in p_dm.runs: r.text = ''
+        if p_dm.runs: p_dm.runs[0].text = d_mano
+        else: p_dm.add_run(d_mano)
+        for col in [2, 4]:
+            target_p = next((p for p in fila_m.cells[col].paragraphs if p.runs), fila_m.cells[col].paragraphs[0])
+            txt_m = f'S/. {p_mano:,.2f}'
+            if target_p.runs:
+                target_p.runs[0].text = txt_m
+                for r in target_p.runs[1:]: r.text = ''
+            else: target_p.add_run(txt_m)
     else:
-        # Vaciar título y tabla de traslado
+        # Vaciar fila de mano de obra
+        for cell in t1.rows[2].cells: clear_runs(cell)
+
+    if not inc_tras and not inc_mano:
+        # Vaciar título y toda la tabla
         for child in body_ch:
             if 'Servicio Adicional' in all_text(child):
                 for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
