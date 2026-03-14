@@ -52,11 +52,12 @@ def generar(datos):
         fila   = t0.rows[i + 1]
         precio = float(prod.get('precio', 0))
         cant   = int(prod.get('cantidad', 1))
-        set_cell(fila.cells[0], prod.get('nombre', ''))
-        set_cell(fila.cells[1], prod.get('descripcion', ''))
-        set_cell(fila.cells[2], f'S/.{precio:,.2f}')
-        set_cell(fila.cells[3], str(cant).zfill(2))
-        set_cell(fila.cells[4], f'S/.{precio*cant:,.2f}')
+        set_cell(fila.cells[0], prod.get('espacio', ''))
+        set_cell(fila.cells[1], prod.get('nombre', ''))
+        set_cell(fila.cells[2], prod.get('descripcion', ''))
+        set_cell(fila.cells[3], f'S/.{precio:,.2f}')
+        set_cell(fila.cells[4], str(cant).zfill(2))
+        set_cell(fila.cells[5], f'S/.{precio*cant:,.2f}')
     # eliminar filas sobrantes
     for i in range(len(t0.rows) - 1, n_prod, -1):
         tr = t0.rows[i]._tr
