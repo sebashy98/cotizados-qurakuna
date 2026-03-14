@@ -118,62 +118,25 @@ def generar(datos):
         for fila in t1.rows:
             for cell in fila.cells: clear_runs(cell)
 
-    # 5. Párrafo del Total — buscar el párrafo entre tabla traslado y *Precios
+    # 5. Vaciar el párrafo del total existente (lo escribiremos después de opcionales)
     XML_SPACE = '{http://www.w3.org/XML/1998/namespace}space'
-    total_txt = f'Total: S/.{total:,.2f}'
-    found_tras = False
-    total_escrito = False
     for child in list(doc.element.body):
         tag = child.tag.split('}')[1] if '}' in child.tag else child.tag
+        if tag == 'tbl' and 'Traslado' in all_text(child):
+            # El siguiente párrafo no-vacío antes de *Precios es el total — vaciarlo
+            pass
+    # Vaciar párrafo [12] que tiene el total viejo
+    body_list = list(doc.element.body)
+    for child in body_list:
         txt = all_text(child)
-        # Marcar cuando pasamos la tabla de traslado O el título de traslado
-        if tag == 'tbl' and 'Traslado' in txt:
-            found_tras = True
-            continue
-        if not found_tras and 'Servicio Adicional' in txt:
-            found_tras = True
-            continue
-        if found_tras and not total_escrito and tag == 'p':
-            if 'Precios no incluyen IGV' in txt or '*Precios' in txt:
-                # No hay párrafo de total entre ellos — insertar uno antes
-                W_NS2 = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-                p_total = etree.SubElement(doc.element.body, f'{{{W_NS2}}}p')
-                rpr_el = etree.SubElement(etree.SubElement(p_total, f'{{{W_NS2}}}pPr'), f'{{{W_NS2}}}rPr')
-                b_el = etree.SubElement(rpr_el, f'{{{W_NS2}}}b')
-                r_el = etree.SubElement(p_total, f'{{{W_NS2}}}r')
-                rpr2 = etree.SubElement(r_el, f'{{{W_NS2}}}rPr')
-                etree.SubElement(rpr2, f'{{{W_NS2}}}b')
-                c_el = etree.SubElement(rpr2, f'{{{W_NS2}}}color')
-                c_el.set(f'{{{W_NS2}}}val', '00B050')
-                t_el2 = etree.SubElement(r_el, f'{{{W_NS2}}}t')
-                t_el2.text = total_txt
-                t_el2.set(XML_SPACE, 'preserve')
-                child.addprevious(p_total)
-                total_escrito = True
+        if txt.strip() in ['  ', ''] and child.tag.endswith('}p'):
+            # Candidate for total paragraph - check neighbors
+            idx = body_list.index(child)
+            prev_tag = body_list[idx-1].tag.split('}')[1] if idx > 0 else ''
+            next_txt = all_text(body_list[idx+1]) if idx+1 < len(body_list) else ''
+            if prev_tag == 'tbl' and 'Precios' in next_txt:
+                for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
                 break
-            # Párrafo vacío = párrafo del total
-            runs_el = child.findall(f'.//{{{W}}}r')
-            for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
-            if runs_el:
-                t_els = runs_el[0].findall(f'{{{W}}}t')
-                if t_els:
-                    t_els[0].text = total_txt
-                    t_els[0].set(XML_SPACE, 'preserve')
-                else:
-                    new_t = etree.SubElement(runs_el[0], f'{{{W}}}t')
-                    new_t.text = total_txt
-                    new_t.set(XML_SPACE, 'preserve')
-            else:
-                r_el = etree.SubElement(child, f'{{{W}}}r')
-                rpr = etree.SubElement(r_el, f'{{{W}}}rPr')
-                etree.SubElement(rpr, f'{{{W}}}b')
-                c_el = etree.SubElement(rpr, f'{{{W}}}color')
-                c_el.set(f'{{{W}}}val', '00B050')
-                t_el = etree.SubElement(r_el, f'{{{W}}}t')
-                t_el.text = total_txt
-                t_el.set(XML_SPACE, 'preserve')
-            total_escrito = True
-            break
 
     # 5b. Limpiar iconos de Medios de Pago que no renderizan bien en LibreOffice
     for p in doc.paragraphs:
@@ -187,6 +150,14 @@ def generar(datos):
 
     # 6. Opcionales
     t2 = doc.tables[2]
+    # Eliminar columna 0 vacía de la tabla de opcionales
+    from lxml import etree as ET2
+    W_NS3 = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    for row in t2.rows:
+        cells = row._tr.findall(f'{{{W_NS3}}}tc')
+        if cells and not ''.join(t.text or '' for t in cells[0].iter(f'{{{W_NS3}}}t')).strip():
+            cells[0].getparent().remove(cells[0])
+
     if not pack and not base:
         # Eliminar completamente todo entre '*Precios no incluyen IGV' y 'Cronograma'
         W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -226,6 +197,27 @@ def generar(datos):
             for cell in t2.rows[1].cells: clear_runs(cell)
         if not base:
             for cell in t2.rows[2].cells: clear_runs(cell)
+
+    # 6b. Escribir el Total DESPUÉS de opcionales (antes de *Precios no incluyen IGV)
+    total_txt = f'Total: S/.{total:,.2f}'
+    # Buscar el párrafo *Precios e insertar el total justo antes
+    for child in list(doc.element.body):
+        txt = all_text(child)
+        if 'Precios no incluyen IGV' in txt or '*Precios' in txt:
+            W_NS2 = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+            p_total = etree.Element(f'{{{W_NS2}}}p')
+            r_el = etree.SubElement(p_total, f'{{{W_NS2}}}r')
+            rpr = etree.SubElement(r_el, f'{{{W_NS2}}}rPr')
+            etree.SubElement(rpr, f'{{{W_NS2}}}b')
+            c_el = etree.SubElement(rpr, f'{{{W_NS2}}}color')
+            c_el.set(f'{{{W_NS2}}}val', '00B050')
+            sz_el = etree.SubElement(rpr, f'{{{W_NS2}}}sz')
+            sz_el.set(f'{{{W_NS2}}}val', '22')
+            t_el = etree.SubElement(r_el, f'{{{W_NS2}}}t')
+            t_el.text = total_txt
+            t_el.set(XML_SPACE, 'preserve')
+            child.addprevious(p_total)
+            break
 
     # 7. Guardar y convertir
     tmpdir = tempfile.mkdtemp()
