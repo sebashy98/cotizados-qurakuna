@@ -165,6 +165,7 @@ def generar(datos):
     )
 
     pdf_p = docx_p.replace('.docx', '.pdf')
+    os.makedirs('/tmp/cotizaciones', exist_ok=True)
     out   = f'/tmp/cotizaciones/Cotizacion_Qurakuna_{safe}.pdf'
     if os.path.exists(pdf_p):
         shutil.copy(pdf_p, out)
