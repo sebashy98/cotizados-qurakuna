@@ -12,14 +12,28 @@ def clear_runs(cell):
     for p in cell.paragraphs:
         for r in p.runs: r.text = ''
 
-def set_cell(cell, texto):
+def set_cell(cell, texto, sz=14):
+    from docx.oxml.ns import qn
+    from lxml import etree
+    W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     for p in cell.paragraphs:
         runs = p.runs
         if runs:
             runs[0].text = texto
             for r in runs[1:]: r.text = ''
             return
-    cell.paragraphs[0].add_run(texto)
+    # No runs - add one with correct font size
+    p = cell.paragraphs[0]
+    run = p.add_run(texto)
+    # Apply font size
+    rpr = run._element.find(qn('w:rPr'))
+    if rpr is None:
+        rpr = etree.SubElement(run._element, f'{{{W_NS}}}rPr')
+        run._element.insert(0, rpr)
+    sz_el = etree.SubElement(rpr, f'{{{W_NS}}}sz')
+    sz_el.set(f'{{{W_NS}}}val', str(sz))
+    sz_el2 = etree.SubElement(rpr, f'{{{W_NS}}}szCs')
+    sz_el2.set(f'{{{W_NS}}}val', str(sz))
 
 def copiar_fila_despues(tabla, idx):
     tr = tabla.rows[idx]._tr
@@ -116,10 +130,10 @@ def generar(datos):
             if '*Precios' in all_text(child) or 'Precios no' in all_text(child):
                 break
             # Este es el párrafo del Total
-            runs_el = child.findall(f'.//{{{W}}}r')
             total_txt = f'Total: S/.{total:,.2f}'
-            # Limpiar todos los <w:t> del párrafo
+            # Limpiar todos los <w:t>
             for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
+            runs_el = child.findall(f'.//{{{W}}}r')
             if runs_el:
                 t_els = runs_el[0].findall(f'{{{W}}}t')
                 if t_els:
@@ -129,6 +143,16 @@ def generar(datos):
                     new_t = etree.SubElement(runs_el[0], f'{{{W}}}t')
                     new_t.text = total_txt
                     new_t.set(XML_SPACE, 'preserve')
+            else:
+                # No runs — create one with bold green formatting
+                r_el = etree.SubElement(child, f'{{{W}}}r')
+                rpr = etree.SubElement(r_el, f'{{{W}}}rPr')
+                b = etree.SubElement(rpr, f'{{{W}}}b')
+                color = etree.SubElement(rpr, f'{{{W}}}color')
+                color.set(f'{{{W}}}val', '00B050')
+                t_el = etree.SubElement(r_el, f'{{{W}}}t')
+                t_el.text = total_txt
+                t_el.set(XML_SPACE, 'preserve')
             break
 
     # 5b. Limpiar iconos de Medios de Pago que no renderizan bien en LibreOffice
