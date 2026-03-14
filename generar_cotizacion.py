@@ -27,7 +27,7 @@ def copiar_fila_despues(tabla, idx):
     tr.addnext(tr_nuevo)
 
 def generar(datos):
-    doc = Document('/app/Cotizacion Qurakuna-PLANTILLA.docx')
+    doc      = Document('/app/Cotización_Qurakuna_-_PLANTILLA.docx')
     nombre   = datos['nombre']
     productos= datos.get('productos', [])
     traslado = datos.get('traslado', {})
@@ -57,9 +57,10 @@ def generar(datos):
         set_cell(fila.cells[2], f'S/.{precio:,.2f}')
         set_cell(fila.cells[3], str(cant).zfill(2))
         set_cell(fila.cells[4], f'S/.{precio*cant:,.2f}')
-    # limpiar filas sobrantes
-    for i in range(n_prod + 1, len(t0.rows)):
-        for cell in t0.rows[i].cells: clear_runs(cell)
+    # eliminar filas sobrantes
+    for i in range(len(t0.rows) - 1, n_prod, -1):
+        tr = t0.rows[i]._tr
+        tr.getparent().remove(tr)
 
     # 3. Total
     total = sum(float(p.get('precio',0)) * int(p.get('cantidad',1)) for p in productos)
@@ -128,6 +129,16 @@ def generar(datos):
                     new_t.text = total_txt
                     new_t.set(XML_SPACE, 'preserve')
             break
+
+    # 5b. Limpiar iconos de Medios de Pago que no renderizan bien en LibreOffice
+    for p in doc.paragraphs:
+        for r in p.runs:
+            if r.text == '⬛':
+                r.text = '■'
+            elif r.text == '-.':
+                r.text = ''
+            elif r.text == '—' and any(rr.text in ['-.', '-'] for rr in p.runs):
+                r.text = '—'
 
     # 6. Opcionales
     t2 = doc.tables[2]
