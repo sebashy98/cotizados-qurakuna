@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Qurakuna — Cotizador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--g:#2E8B2E;--gd:#1A5C1A;--gl:#E8F5E8;--bd:#ddd;--gr:#666;--tx:#222}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f4f4f4;color:var(--tx)}
+header{background:var(--gd);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+header img{height:36px}
+header h1{color:#fff;font-size:17px;font-weight:700}
+header p{color:#90EE90;font-size:11px;margin-top:2px}
+.wrap{max-width:700px;margin:0 auto;padding:24px 14px 80px}
+.card{background:#fff;border-radius:12px;padding:22px;margin-bottom:14px;border:1px solid var(--bd);box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.ct{font-size:11px;font-weight:700;color:var(--gd);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--gl)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g1{margin-bottom:12px}
+label{display:block;font-size:11px;font-weight:600;color:var(--gr);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+input,textarea,select{width:100%;padding:9px 11px;border:1.5px solid var(--bd);border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--tx);background:#fafafa;outline:none;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--g);background:#fff}
+input[readonly]{background:#f0f0f0;color:var(--gd);font-weight:600}
+textarea{min-height:52px;resize:vertical}
+.pc{background:#fafafa;border:1.5px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pn{font-size:11px;font-weight:700;color:var(--gd);text-transform:uppercase}
+.bdel{background:none;border:none;color:#c0392b;font-size:22px;line-height:1;cursor:pointer;padding:0 4px;border-radius:4px}
+.bdel:hover{background:#ffeaea}
+.ci{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border:1.5px solid var(--bd);border-radius:9px;margin-bottom:8px;cursor:pointer;transition:border-color .2s,background .2s}
+.ci:hover{border-color:var(--g);background:var(--gl)}
+.ci input[type=checkbox]{width:16px;height:16px;margin-top:2px;accent-color:var(--g);flex-shrink:0;cursor:pointer}
+.ci-t{font-size:13px;font-weight:600}
+.ci-s{font-size:11px;color:var(--gr);margin-top:2px;line-height:1.4}
+.badd{width:100%;padding:10px;background:none;border:2px dashed var(--g);color:var(--gd);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;margin-top:4px;transition:background .2s}
+.badd:hover{background:var(--gl)}
+.tot{display:flex;justify-content:space-between;align-items:center;background:var(--gd);color:#fff;border-radius:10px;padding:13px 16px;margin-top:12px}
+.tot .lbl{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:1px}
+.tot .amt{font-size:22px;font-weight:700;color:gold}
+.bgen{display:block;width:100%;padding:14px;background:var(--gd);color:#fff;font-family:'Inter',sans-serif;font-size:16px;font-weight:700;border:none;border-radius:11px;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(26,92,26,.3);transition:background .2s,transform .15s}
+.bgen:hover{background:var(--g);transform:translateY(-1px)}
+.bgen:disabled{background:#aaa;cursor:not-allowed;transform:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 24px;border-radius:50px;font-size:13px;font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);color:#fff}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.tok{background:var(--gd)}.terr{background:#c0392b}
+@media(max-width:520px){.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <img src="data:image/jpeg;base64,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" alt="Qurakuna">
+  <div><h1>Qurakuna Garden Center</h1><p>Generador de Cotizaciones</p></div>
+</header>
+<div class="wrap">
+  <div class="card">
+    <div class="ct">Datos del Cliente</div>
+    <div class="g2">
+      <div><label>Nombre *</label><input id="nombre" type="text" placeholder="Ej: Rolando Pérez"></div>
+      <div><label>Tipo</label><select id="tipo"><option>Hogar (B2C)</option><option>Empresa (B2B)</option></select></div>
+    </div>
+    <div class="g1"><label>Dirección de entrega</label><input id="dir" type="text" placeholder="Ej: Av. Los Álamos 456, Miraflores"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Productos</div>
+    <div id="prods"></div>
+    <button class="badd" id="btn-add">+ Agregar producto</button>
+  </div>
+  <div class="card">
+    <div class="ct">Traslado y Mano de Obra</div>
+
+    <!-- TRASLADO -->
+    <label class="ci">
+      <input type="checkbox" id="chk-t">
+      <div><div class="ci-t">Traslado</div><div class="ci-s">Recojo y traslado de plantas, macetas y personal. Ida y vuelta.</div></div>
+    </label>
+    <div id="t-extra" style="display:none">
+      <div class="g2" style="margin-bottom:8px">
+        <div>
+          <label>Distrito de entrega</label>
+          <select id="t-desc">
+            <option value="">Selecciona un distrito...</option>
+            <option value="Ancón">Ancón</option>
+<option value="Ate">Ate</option>
+<option value="Barranco">Barranco</option>
+<option value="Bellavista">Bellavista</option>
+<option value="Breña">Breña</option>
+<option value="Callao">Callao</option>
+<option value="Carabayllo">Carabayllo</option>
+<option value="Carmen de la Legua">Carmen de la Legua</option>
+<option value="Chaclacayo">Chaclacayo</option>
+<option value="Chorrillos">Chorrillos</option>
+<option value="Cieneguilla">Cieneguilla</option>
+<option value="Comas">Comas</option>
+<option value="El Agustino">El Agustino</option>
+<option value="Independencia">Independencia</option>
+<option value="Jesús María">Jesús María</option>
+<option value="La Molina">La Molina</option>
+<option value="La Perla">La Perla</option>
+<option value="La Punta">La Punta</option>
+<option value="La Victoria">La Victoria</option>
+<option value="Lince">Lince</option>
+<option value="Los Olivos">Los Olivos</option>
+<option value="Lurigancho">Lurigancho</option>
+<option value="Lurín">Lurín</option>
+<option value="Magdalena del Mar">Magdalena del Mar</option>
+<option value="Mi Perú">Mi Perú</option>
+<option value="Miraflores">Miraflores</option>
+<option value="Pachacámac">Pachacámac</option>
+<option value="Pucusana">Pucusana</option>
+<option value="Pueblo Libre">Pueblo Libre</option>
+<option value="Puente Piedra">Puente Piedra</option>
+<option value="Punta Hermosa">Punta Hermosa</option>
+<option value="Punta Negra">Punta Negra</option>
+<option value="Rímac">Rímac</option>
+<option value="San Bartolo">San Bartolo</option>
+<option value="San Borja">San Borja</option>
+<option value="San Isidro">San Isidro</option>
+<option value="San Juan de Lurigancho">San Juan de Lurigancho</option>
+<option value="San Juan de Miraflores">San Juan de Miraflores</option>
+<option value="San Luis">San Luis</option>
+<option value="San Martín de Porres">San Martín de Porres</option>
+<option value="San Miguel">San Miguel</option>
+<option value="Santa Anita">Santa Anita</option>
+<option value="Santa María del Mar">Santa María del Mar</option>
+<option value="Santa Rosa">Santa Rosa</option>
+<option value="Santiago de Surco">Santiago de Surco</option>
+<option value="Surquillo">Surquillo</option>
+<option value="Ventanilla">Ventanilla</option>
+<option value="Villa El Salvador">Villa El Salvador</option>
+<option value="Villa María del Triunfo">Villa María del Triunfo</option>
+          </select>
+          </select>
+        </div>
+        <div><label>Detalle adicional (opcional)</label><input id="t-detalle" type="text" placeholder="Ej: Edificio, piso, referencia..."></div>
+      </div>
+      <div class="g1" style="margin-bottom:12px">
+        <div><label>Precio traslado (S/.)</label><input id="t-pre" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      </div>
+    </div>
+
+    <!-- MANO DE OBRA -->
+    <label class="ci">
+      <input type="checkbox" id="chk-mano">
+      <div><div class="ci-t">Mano de obra</div><div class="ci-s">Servicio de instalación por jardinero.</div></div>
+    </label>
+    <div id="mano-row" style="display:none">
+      <div class="g2" style="margin-bottom:12px">
+        <div><label>Descripción</label><input id="mano-desc" type="text" placeholder="Ej: Instalación de plantas y macetas"></div>
+        <div><label>Precio mano de obra (S/.)</label><input id="mano-pre" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="card">
+    <div class="ct">Productos Opcionales</div>
+    <label class="ci">
+      <input type="checkbox" id="chk-pack">
+      <div><div class="ci-t">Pack Cuidado Total — S/.60.00</div><div class="ci-s">Aceite de Neem + Bioestimulante + Limpiador de Hojas + Jabón Potásico</div></div>
+    </label>
+    <label class="ci">
+      <input type="checkbox" id="chk-base">
+      <div><div class="ci-t">Base Móvil Antirayones — S/.60.00</div><div class="ci-s">Estructura de fierro con ruedas para mover la maceta sin esfuerzo</div></div>
+    </label>
+  </div>
+  <div class="card">
+    <div class="ct">Generar Cotización</div>
+    <div class="g1"><label>Nota adicional (opcional)</label><textarea id="nota" placeholder="Ej: Maceta color blanco, entrega sábado..."></textarea></div>
+    <div class="tot">
+      <div><div class="lbl">Total estimado</div><div style="font-size:9px;opacity:.4;margin-top:2px">*No incluye IGV</div></div>
+      <div class="amt" id="tot-disp">S/. 0.00</div>
+    </div>
+    <button class="bgen" id="btn-gen">🌿 Generar Cotización PDF</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var pCount=0;
+document.getElementById('btn-add').addEventListener('click',addProd);
+document.getElementById('chk-t').addEventListener('change',function(){
+  document.getElementById('t-extra').style.display=this.checked?'block':'none';calcTotal();
+});
+document.getElementById('t-pre').addEventListener('input',calcTotal);
+document.getElementById('chk-mano').addEventListener('change',function(){
+  document.getElementById('mano-row').style.display=this.checked?'block':'none';calcTotal();
+});
+document.getElementById('mano-pre').addEventListener('input',calcTotal);
+document.getElementById('chk-pack').addEventListener('change',calcTotal);
+document.getElementById('chk-base').addEventListener('change',calcTotal);
+function addProd(){
+  pCount++;var n=pCount;
+  var d=document.createElement('div');d.className='pc';d.id='p'+n;
+  d.innerHTML='<div class="ph"><span class="pn">Producto '+n+'</span>'
+    +(n>1?'<button class="bdel" onclick="delP('+n+')">×</button>':'')+'</div>'
+    +'<div class="g2">'
+    +'<div><label>Espacio</label><input id="esp'+n+'" type="text" placeholder="Ej: Sala, Comedor, Baño..."></div>'
+    +'<div><label>Nombre *</label><input id="nom'+n+'" type="text" placeholder="Ej: Palmera Bambú"></div>'
+    +'</div>'
+    +'<div class="g2">'
+    +'<div><label>Precio unitario (S/.)</label><input id="pre'+n+'" type="number" min="0" step="0.01" placeholder="0.00"></div>'
+    +'<div><label>Cantidad</label><input id="cant'+n+'" type="number" min="1" value="1"></div>'
+    +'</div>'
+    +'<div class="g1"><label>Descripción</label>'
+    +'<textarea id="desc'+n+'" placeholder="Ej: Palmera de 1.20m & Maceta fibra de vidrio..."></textarea></div>'
+    +'<div class="g1">'
+    +'<div><label>Subtotal</label><input id="sub'+n+'" type="text" readonly placeholder="S/. 0.00"></div>'
+    +'</div>';
+  document.getElementById('prods').appendChild(d);
+  document.getElementById('pre'+n).addEventListener('input',calcTotal);
+  document.getElementById('cant'+n).addEventListener('input',calcTotal);
+  calcTotal();
+}
+function delP(n){var e=document.getElementById('p'+n);if(e){e.remove();calcTotal();}}
+function calcTotal(){
+  var t=0;
+  for(var i=1;i<=pCount;i++){
+    var el=document.getElementById('p'+i);if(!el)continue;
+    var p=parseFloat(document.getElementById('pre'+i).value)||0;
+    var c=parseInt(document.getElementById('cant'+i).value)||1;
+    var s=p*c;t+=s;document.getElementById('sub'+i).value='S/. '+s.toFixed(2);
+  }
+  if(document.getElementById('chk-t').checked)t+=parseFloat(document.getElementById('t-pre').value)||0;
+  if(document.getElementById('chk-mano').checked)t+=parseFloat(document.getElementById('mano-pre').value)||0;
+  if(document.getElementById('chk-pack').checked)t+=60;
+  if(document.getElementById('chk-base').checked)t+=60;
+  document.getElementById('tot-disp').textContent='S/. '+t.toFixed(2);
+}
+function showToast(msg,err){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(err?'terr':'tok')+' show';
+  setTimeout(function(){t.classList.remove('show');},3500);
+}
+document.getElementById('btn-gen').addEventListener('click',function(){
+  var nombre=document.getElementById('nombre').value.trim();
+  if(!nombre){showToast('Ingresa el nombre del cliente',true);return;}
+  var prods=[];
+  for(var i=1;i<=pCount;i++){
+    var el=document.getElementById('p'+i);if(!el)continue;
+    var nom=document.getElementById('nom'+i).value.trim();if(!nom)continue;
+    prods.push({
+      espacio:document.getElementById('esp'+i).value.trim(),
+      nombre:nom,
+      descripcion:document.getElementById('desc'+i).value.trim(),
+      precio:parseFloat(document.getElementById('pre'+i).value)||0,
+      cantidad:parseInt(document.getElementById('cant'+i).value)||1});
+  }
+  if(!prods.length){showToast('Agrega al menos un producto',true);return;}
+  var datos={nombre:nombre,productos:prods,
+    var distrito = document.getElementById('t-desc').value.trim();
+    var detalle = document.getElementById('t-detalle').value.trim();
+    var desc_traslado = 'Recojo de Plantas & Traslado de Plantas, Personal, Macetas. Ida y Vuelta';
+    if(distrito) desc_traslado += ': ' + distrito;
+    if(detalle) desc_traslado += ' - ' + detalle;
+    desc_traslado += '.';
+    traslado:{incluye:document.getElementById('chk-t').checked,
+      precio:parseFloat(document.getElementById('t-pre').value)||0,
+      descripcion: desc_traslado},
+    mano_obra:{incluye:document.getElementById('chk-mano').checked,
+      precio:parseFloat(document.getElementById('mano-pre').value)||0,
+      descripcion:document.getElementById('mano-desc').value.trim()||'Servicio de instalación por jardinero.'},
+    pack_cuidado:document.getElementById('chk-pack').checked,
+    base_movil:document.getElementById('chk-base').checked,
+    nota:document.getElementById('nota').value.trim()};
+  var btn=document.getElementById('btn-gen');
+  btn.disabled=true;btn.textContent='Generando PDF...';
+  fetch('/generar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)})
+  .then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});return r.blob();})
+  .then(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;
+    a.download='Cotizacion_Qurakuna_'+nombre.replace(/\s+/g,'_')+'.pdf';
+    a.click();URL.revokeObjectURL(url);
+    showToast('Cotizacion descargada correctamente');
+  })
+  .catch(function(e){showToast('Error: '+e.message,true);})
+  .finally(function(){btn.disabled=false;btn.textContent='Generar Cotizacion PDF';});
+});
+document.getElementById('btn-add').click();
+</script>
+</body>
+</html>
