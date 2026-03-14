@@ -118,22 +118,42 @@ def generar(datos):
         for fila in t1.rows:
             for cell in fila.cells: clear_runs(cell)
 
-    # 5. Párrafo del Total (el párrafo vacío entre tabla traslado y "*Precios")
-    found_t1 = False
+    # 5. Párrafo del Total — buscar el párrafo entre tabla traslado y *Precios
     XML_SPACE = '{http://www.w3.org/XML/1998/namespace}space'
-    for child in body_ch:
+    total_txt = f'Total: S/.{total:,.2f}'
+    found_tras = False
+    total_escrito = False
+    for child in list(doc.element.body):
         tag = child.tag.split('}')[1] if '}' in child.tag else child.tag
-        if tag == 'tbl' and 'Servicio' in all_text(child):
-            found_t1 = True
+        txt = all_text(child)
+        # Marcar cuando pasamos la tabla de traslado O el título de traslado
+        if tag == 'tbl' and 'Traslado' in txt:
+            found_tras = True
             continue
-        if found_t1 and tag == 'p':
-            if '*Precios' in all_text(child) or 'Precios no' in all_text(child):
+        if not found_tras and 'Servicio Adicional' in txt:
+            found_tras = True
+            continue
+        if found_tras and not total_escrito and tag == 'p':
+            if 'Precios no incluyen IGV' in txt or '*Precios' in txt:
+                # No hay párrafo de total entre ellos — insertar uno antes
+                W_NS2 = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+                p_total = etree.SubElement(doc.element.body, f'{{{W_NS2}}}p')
+                rpr_el = etree.SubElement(etree.SubElement(p_total, f'{{{W_NS2}}}pPr'), f'{{{W_NS2}}}rPr')
+                b_el = etree.SubElement(rpr_el, f'{{{W_NS2}}}b')
+                r_el = etree.SubElement(p_total, f'{{{W_NS2}}}r')
+                rpr2 = etree.SubElement(r_el, f'{{{W_NS2}}}rPr')
+                etree.SubElement(rpr2, f'{{{W_NS2}}}b')
+                c_el = etree.SubElement(rpr2, f'{{{W_NS2}}}color')
+                c_el.set(f'{{{W_NS2}}}val', '00B050')
+                t_el2 = etree.SubElement(r_el, f'{{{W_NS2}}}t')
+                t_el2.text = total_txt
+                t_el2.set(XML_SPACE, 'preserve')
+                child.addprevious(p_total)
+                total_escrito = True
                 break
-            # Este es el párrafo del Total
-            total_txt = f'Total: S/.{total:,.2f}'
-            # Limpiar todos los <w:t>
-            for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
+            # Párrafo vacío = párrafo del total
             runs_el = child.findall(f'.//{{{W}}}r')
+            for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
             if runs_el:
                 t_els = runs_el[0].findall(f'{{{W}}}t')
                 if t_els:
@@ -144,15 +164,15 @@ def generar(datos):
                     new_t.text = total_txt
                     new_t.set(XML_SPACE, 'preserve')
             else:
-                # No runs — create one with bold green formatting
                 r_el = etree.SubElement(child, f'{{{W}}}r')
                 rpr = etree.SubElement(r_el, f'{{{W}}}rPr')
-                b = etree.SubElement(rpr, f'{{{W}}}b')
-                color = etree.SubElement(rpr, f'{{{W}}}color')
-                color.set(f'{{{W}}}val', '00B050')
+                etree.SubElement(rpr, f'{{{W}}}b')
+                c_el = etree.SubElement(rpr, f'{{{W}}}color')
+                c_el.set(f'{{{W}}}val', '00B050')
                 t_el = etree.SubElement(r_el, f'{{{W}}}t')
                 t_el.text = total_txt
                 t_el.set(XML_SPACE, 'preserve')
+            total_escrito = True
             break
 
     # 5b. Limpiar iconos de Medios de Pago que no renderizan bien en LibreOffice
