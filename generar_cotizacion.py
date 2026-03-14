@@ -27,7 +27,7 @@ def copiar_fila_despues(tabla, idx):
     tr.addnext(tr_nuevo)
 
 def generar(datos):
-    doc      = Document('/app/Cotización_Qurakuna_-_PLANTILLA.docx')
+    doc = Document('/app/Cotizacion Qurakuna-PLANTILLA.docx')
     nombre   = datos['nombre']
     productos= datos.get('productos', [])
     traslado = datos.get('traslado', {})
