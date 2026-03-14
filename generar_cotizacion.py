@@ -149,6 +149,22 @@ def generar(datos):
                 to_remove.append(child)
         for child in to_remove:
             child.getparent().remove(child)
+        # Agregar salto de página después de *Precios no incluyen IGV
+        # para que Cronograma siga en página 2
+        from docx.oxml import OxmlElement
+        # Buscar el párrafo de *Precios y agregarle un page break
+        for child in list(doc.element.body):
+            txt = all_t(child)
+            if 'Precios no incluyen IGV' in txt:
+                # Agregar <w:p><w:r><w:br w:type="page"/></w:r></w:p> después
+                W_NS2 = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+                p_break = etree.SubElement(doc.element.body, f'{{{W_NS2}}}p')
+                r_break = etree.SubElement(p_break, f'{{{W_NS2}}}r')
+                br = etree.SubElement(r_break, f'{{{W_NS2}}}br')
+                br.set(f'{{{W_NS2}}}type', 'page')
+                # Mover el salto justo después del párrafo de *Precios
+                child.addnext(p_break)
+                break
     else:
         if not pack:
             for cell in t2.rows[1].cells: clear_runs(cell)
