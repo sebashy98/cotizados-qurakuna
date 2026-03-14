@@ -131,10 +131,27 @@ def generar(datos):
 
     # 6. Opcionales
     t2 = doc.tables[2]
-    if not pack:
-        for cell in t2.rows[1].cells: clear_runs(cell)
-    if not base:
-        for cell in t2.rows[2].cells: clear_runs(cell)
+    if not pack and not base:
+        # Vaciar todo entre '*Precios no incluyen IGV' y 'Cronograma'
+        W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+        def all_t(el):
+            return ''.join((t.text or '') for t in el.iter('{'+W_NS+'}t'))
+        in_op = False
+        for child in list(doc.element.body):
+            txt = all_t(child)
+            if 'Precios no incluyen IGV' in txt:
+                in_op = True
+                continue
+            if 'Cronograma' in txt:
+                break
+            if in_op:
+                for t_el in child.iter('{'+W_NS+'}t'):
+                    t_el.text = ''
+    else:
+        if not pack:
+            for cell in t2.rows[1].cells: clear_runs(cell)
+        if not base:
+            for cell in t2.rows[2].cells: clear_runs(cell)
 
     # 7. Guardar y convertir
     tmpdir = tempfile.mkdtemp()
@@ -148,7 +165,6 @@ def generar(datos):
     )
 
     pdf_p = docx_p.replace('.docx', '.pdf')
-    os.makedirs('/tmp/cotizaciones', exist_ok=True)
     out   = f'/tmp/cotizaciones/Cotizacion_Qurakuna_{safe}.pdf'
     if os.path.exists(pdf_p):
         shutil.copy(pdf_p, out)
