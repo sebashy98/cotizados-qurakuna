@@ -142,21 +142,37 @@ def generar(datos):
             for cell in t1.rows[2].cells: clear_runs(cell)
 
     if not inc_tras and not inc_mano:
-        # Vaciar título y toda la tabla
-        for child in body_ch:
-            if 'Servicio Adicional' in all_text(child):
-                for t_el in child.iter(f'{{{W}}}t'): t_el.text = ''
-        for fila in t1.rows:
-            for cell in fila.cells: clear_runs(cell)
+        # Eliminar título y tabla completa
+        to_remove = []
+        for child in list(doc.element.body):
+            txt = all_text(child)
+            tag = child.tag.split('}')[1] if '}' in child.tag else child.tag
+            if 'Servicio Adicional' in txt:
+                to_remove.append(child)
+            elif tag == 'tbl' and 'Traslado' in txt and 'Servicio' in txt:
+                to_remove.append(child)
+        for child in to_remove:
+            child.getparent().remove(child)
 
     # ── 5. Opcionales ──
     t2 = doc.tables[2]
     if not pack and not base:
-        # Eliminar todo el bloque de opcionales
+        # Eliminar bloque de opcionales incluyendo línea divisoria y párrafos vacíos previos
+        body_now = list(doc.element.body)
         to_remove = []
         in_op = False
-        for child in list(doc.element.body):
+        # También eliminar el separador (---) y párrafos vacíos antes de "Productos Opcionales"
+        for i, child in enumerate(body_now):
             txt = all_text(child)
+            tag = child.tag.split('}')[1] if '}' in child.tag else child.tag
+            if '---' in txt or (tag == 'p' and not txt.strip() and in_op is False):
+                # Check if next non-empty element is "Productos Opcionales"
+                for j in range(i+1, len(body_now)):
+                    next_txt = all_text(body_now[j]).strip()
+                    if next_txt:
+                        if 'Productos Opcionales' in next_txt:
+                            to_remove.append(child)
+                        break
             if 'Productos Opcionales' in txt:
                 in_op = True
                 to_remove.append(child)
@@ -166,7 +182,8 @@ def generar(datos):
                     break
                 to_remove.append(child)
         for child in to_remove:
-            child.getparent().remove(child)
+            try: child.getparent().remove(child)
+            except: pass
     else:
         if not pack:
             for cell in t2.rows[1].cells: clear_runs(cell)
