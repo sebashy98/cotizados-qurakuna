@@ -152,7 +152,10 @@ def generar(datos):
                 to_remove.append(child)
                 continue
             if in_op:
-                if 'Total' in txt or 'Precios no incluyen' in txt:
+                # Solo parar en párrafo (no tabla) que tenga Total = o *Precios
+                if tag == 'p' and ('Total' in txt and '=' in txt):
+                    break
+                if tag == 'p' and 'Precios no incluyen' in txt:
                     break
                 to_remove.append(child)
             # párrafo vacío justo antes de "Productos Opcionales"
