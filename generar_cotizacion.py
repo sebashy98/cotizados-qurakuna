@@ -125,23 +125,21 @@ def generar(datos):
                 target_p.runs[0].text = txt
                 for r in target_p.runs[1:]: r.text = ''
             else: target_p.add_run(txt)
-    # Mano de obra (fila 2 de tabla traslado)
+    # Mano de obra (fila 2 de tabla traslado, si existe)
     if inc_mano and p_mano > 0:
+        # Si no hay fila 2, copiarla de la fila 1
+        if len(t1.rows) < 3:
+            copiar_fila_despues(t1, 1)
         fila_m = t1.rows[2]
-        p_dm = fila_m.cells[1].paragraphs[0]
-        for r in p_dm.runs: r.text = ''
-        if p_dm.runs: p_dm.runs[0].text = d_mano
-        else: p_dm.add_run(d_mano)
-        for col in [2, 4]:
-            target_p = next((p for p in fila_m.cells[col].paragraphs if p.runs), fila_m.cells[col].paragraphs[0])
-            txt_m = f'S/. {p_mano:,.2f}'
-            if target_p.runs:
-                target_p.runs[0].text = txt_m
-                for r in target_p.runs[1:]: r.text = ''
-            else: target_p.add_run(txt_m)
+        set_cell(fila_m.cells[0], 'Mano de obra')
+        set_cell(fila_m.cells[1], d_mano)
+        set_cell(fila_m.cells[2], f'S/. {p_mano:,.2f}')
+        set_cell(fila_m.cells[3], '1.00')
+        set_cell(fila_m.cells[4], f'S/. {p_mano:,.2f}')
     else:
-        # Vaciar fila de mano de obra
-        for cell in t1.rows[2].cells: clear_runs(cell)
+        # Vaciar fila de mano de obra si existe
+        if len(t1.rows) > 2:
+            for cell in t1.rows[2].cells: clear_runs(cell)
 
     if not inc_tras and not inc_mano:
         # Vaciar título y toda la tabla
