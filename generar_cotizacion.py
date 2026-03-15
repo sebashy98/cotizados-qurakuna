@@ -93,12 +93,10 @@ def generar(datos):
         # Llenar fila de traslado (fila 1)
         if inc_tras and p_tras > 0:
             fila_t = t1.rows[1]
-            # descripción - tiene múltiples runs
             p_d = fila_t.cells[1].paragraphs[0]
             for r in p_d.runs: r.text = ''
             if p_d.runs: p_d.runs[0].text = d_tras
             else: p_d.add_run(d_tras)
-            # precio (runs partidos)
             for col in [2, 4]:
                 target_p = next((p for p in fila_t.cells[col].paragraphs if p.runs), fila_t.cells[col].paragraphs[0])
                 if target_p.runs:
@@ -108,7 +106,6 @@ def generar(datos):
         else:
             for cell in t1.rows[1].cells: clear_runs(cell)
 
-        # Llenar fila de mano de obra (fila 2)
         if inc_mano and p_mano > 0:
             if len(t1.rows) < 3:
                 copiar_fila_despues(t1, 1)
@@ -122,17 +119,27 @@ def generar(datos):
             if len(t1.rows) > 2:
                 for cell in t1.rows[2].cells: clear_runs(cell)
     else:
-        # Eliminar título [9] y tabla [11] y párrafos vacíos entre ellos
-        for child in [body[8], body[9], body[10], body[11]]:
+        # Eliminar bloque traslado buscando por CONTENIDO (no por índice)
+        to_remove = []
+        in_block = False
+        for child in list(doc.element.body):
+            txt = all_text(child)
+            tag = child.tag.split('}')[1] if '}' in child.tag else child.tag
+            if 'Servicio Adicional' in txt:
+                in_block = True
+                to_remove.append(child)
+                continue
+            if in_block:
+                if tag == 'p' and ('Productos Opcionales' in txt or ('Total' in txt and '=' in txt) or 'Precios no incluyen' in txt):
+                    break
+                to_remove.append(child)
+        for child in to_remove:
             remove_element(child)
 
     # ── 5. Opcionales ──
-    # Reload body after possible removals
-    body2 = list(doc.element.body)
     t2 = doc.tables[2] if len(doc.tables) > 2 else None
 
     if not pack and not base:
-        # Eliminar todo: párrafo [12] vacío, [13] título, [14] párrafo, [15] tabla, [16] párrafo
         to_remove = []
         in_op = False
         for child in list(doc.element.body):
@@ -146,12 +153,11 @@ def generar(datos):
                 if 'Total' in txt or 'Precios no incluyen' in txt:
                     break
                 to_remove.append(child)
-            # También el párrafo vacío justo antes del título
+            # párrafo vacío justo antes de "Productos Opcionales"
             if not in_op and tag == 'p' and not txt.strip():
-                # Verificar si el siguiente elemento tiene "Productos Opcionales"
                 body_tmp = list(doc.element.body)
-                idx = body_tmp.index(child) if child in body_tmp else -1
-                if idx >= 0:
+                if child in body_tmp:
+                    idx = body_tmp.index(child)
                     for j in range(idx+1, min(idx+3, len(body_tmp))):
                         if 'Productos Opcionales' in all_text(body_tmp[j]):
                             to_remove.append(child)
