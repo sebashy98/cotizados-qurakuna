@@ -92,6 +92,19 @@ def generar(datos):
     t1 = doc.tables[1]
 
     if inc_tras or inc_mano:
+        # Asegurar que el título quede completo (consolidar runs)
+        for child in list(doc.element.body):
+            txt = all_text(child)
+            if 'Servicio Adicional' in txt:
+                runs_el = child.findall(f'.//{{{W}}}r')
+                if runs_el:
+                    # Poner todo en el primer run y vaciar los demás
+                    runs_el[0].find(f'{{{W}}}t').text = 'Servicio Adicional: Traslado y Mano de Obra'
+                    for r in runs_el[1:]:
+                        for t_el in r.findall(f'{{{W}}}t'):
+                            t_el.text = ''
+                break
+
         # Llenar fila de traslado (fila 1)
         if inc_tras and p_tras > 0:
             fila_t = t1.rows[1]
