@@ -50,6 +50,8 @@ def generar(datos):
     d_mano   = mano.get('descripcion', 'Servicio de instalacion por jardinero.')
     pack     = datos.get('pack_cuidado', False)
     base     = datos.get('base_movil', False)
+    import sys
+    print(f"DEBUG: pack={pack} base={base} inc_tras={datos.get('traslado',{}).get('incluye')} inc_mano={datos.get('mano_obra',{}).get('incluye')}", file=sys.stderr)
 
     # ── 1. Nombre en párrafos ──
     for p in doc.paragraphs:
